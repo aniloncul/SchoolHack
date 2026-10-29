@@ -150,3 +150,7 @@ vite.config.ts.timestamp-*
 
 # macOS
 .DS_Store
+
+# Local RE runs and tools
+rea/
+rea-runs/

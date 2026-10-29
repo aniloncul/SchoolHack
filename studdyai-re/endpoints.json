@@ -1,0 +1,1029 @@
+{
+  "target": {
+    "origin": "https://studdyai.com",
+    "page": "https://studdyai.com/tutor-session/364562",
+    "next_deployment": "dpl_AzRgfhPtbqpxN7qHiztsUnL2WLc5",
+    "captured_at": "2026-10-28"
+  },
+  "auth": {
+    "client_sdk": null,
+    "authorization_header": "absent (verified live, 246 requests)",
+    "mechanism": "cookie-based, server-side; cookie name not observable via CDP requestWillBeSent",
+    "extra_headers": {
+      "x-deployment-id": "dpl_AzRgfhPtbqpxN7qHiztsUnL2WLc5"
+    }
+  },
+  "groups": {
+    "session": [
+      {
+        "method": "POST",
+        "path": "/api/session/create",
+        "request": {
+          "sessionType": "topic|homework|exam",
+          "userTextInput": "string",
+          "attachments": "FileUpload[]",
+          "lifetimeValidSessionsCount": "number",
+          "studentNameOverride": "string|null",
+          "metadata": {
+            "appVersion": "1.0.7",
+            "boardDimensions": {
+              "width": "number",
+              "height": "number"
+            }
+          },
+          "academyLessonToken": "string|null",
+          "denseCoverage": {
+            "arm": "dense|control",
+            "consolidation": "object?"
+          }
+        },
+        "response": {
+          "sessionId": "number"
+        },
+        "evidence": "pretty/s8.js:934, pretty/s18.js:4566"
+      },
+      {
+        "method": "GET",
+        "path": "/api/session/{id}",
+        "response": {
+          "sessionHead": "object",
+          "finishReason": "string?",
+          "title": "string?",
+          "timeSpent": "number?"
+        },
+        "evidence": "pretty/s18.js:4590, pretty/s3.js:1038"
+      },
+      {
+        "method": "GET",
+        "path": "/api/session/{id}/events",
+        "query": {
+          "from": "number",
+          "limit": "number (1000)"
+        },
+        "response": {
+          "events": "SessionEvent[]",
+          "total": "number"
+        },
+        "evidence": "pretty/s18.js:4598"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/session/{id}",
+        "request": {
+          "appended": "SessionEvent[]",
+          "removed": "EventPosition[]",
+          "head": "object?",
+          "persistedCount": "number"
+        },
+        "response": {
+          "persistedCount": "number"
+        },
+        "errors": {
+          "409": "conflict -> client reloads page"
+        },
+        "evidence": "pretty/s18.js:4623, pretty/s3.js:3273"
+      },
+      {
+        "method": "DELETE",
+        "path": "/api/session/{id}",
+        "evidence": "pretty/s18.js:4782"
+      },
+      {
+        "method": "POST",
+        "path": "/api/session/generate-response",
+        "request": {
+          "sessionId": "number",
+          "delta": {
+            "appended": "SessionEvent[]",
+            "removed": "EventPosition[]",
+            "head": "object?"
+          },
+          "tutorModel": "string? (authorized users only)"
+        },
+        "response": "NDJSON stream of TutorCommand | StreamPayload",
+        "response_headers": {
+          "x-tutor-ladder-source": "admin|granted|demo|opus_start|ops"
+        },
+        "evidence": "pretty/s3.js:8762, pretty/s16.js:850"
+      },
+      {
+        "method": "POST",
+        "path": "/api/session/collapse-context",
+        "request": {
+          "sessionId": "number",
+          "delta": "Delta"
+        },
+        "response": {
+          "segments": [
+            {
+              "summaryText": "string",
+              "fromTurn": "number",
+              "toTurn": "number"
+            }
+          ]
+        },
+        "evidence": "pretty/s3.js:8792, pretty/s3.js:893"
+      },
+      {
+        "method": "POST",
+        "path": "/api/session/reset",
+        "request": {
+          "originalSessionId": "number"
+        },
+        "response": {
+          "newSessionId": "number"
+        },
+        "evidence": "pretty/s18.js:4647"
+      },
+      {
+        "method": "POST",
+        "path": "/api/session/{id}/finish",
+        "request": {
+          "reason": "user_ended|completed|paywalled|reset|abandoned",
+          "timeSpent": "number"
+        },
+        "note": "reason=abandoned uses navigator.sendBeacon",
+        "evidence": "pretty/s18.js:4664"
+      },
+      {
+        "method": "POST",
+        "path": "/api/session/{id}/clear-finish-reason",
+        "evidence": "pretty/s18.js:4683"
+      },
+      {
+        "method": "POST",
+        "path": "/api/session/{id}/heartbeat",
+        "request": {
+          "timeSpent": "number"
+        },
+        "cadence_ms": 10000,
+        "evidence": "pretty/s18.js:4692, pretty/s3.js:1148"
+      },
+      {
+        "method": "POST",
+        "path": "/api/session/create-title",
+        "request": {
+          "sessionId": "number"
+        },
+        "response": {
+          "title": "string"
+        },
+        "evidence": "pretty/s18.js:4704"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/session/update-title",
+        "request": {
+          "sessionId": "number",
+          "title": "string"
+        },
+        "evidence": "pretty/s18.js:4769"
+      },
+      {
+        "method": "POST",
+        "path": "/api/session/{id}/check-uploads",
+        "request": {
+          "typedText": "string",
+          "fileUploads": "FileUpload[]"
+        },
+        "evidence": "pretty/s18.js:4717"
+      },
+      {
+        "method": "POST",
+        "path": "/api/session/{id}/recompile-initiate-instructions",
+        "request": {
+          "fileUploads": "FileUpload[]",
+          "promptVariables": "object"
+        },
+        "evidence": "pretty/s18.js:4731"
+      },
+      {
+        "method": "POST",
+        "path": "/api/session/{id}/tutor",
+        "request": {
+          "tutorId": "alfrenzo|rubie",
+          "recompileInitiate": "boolean"
+        },
+        "evidence": "pretty/s18.js:4745"
+      },
+      {
+        "method": "GET",
+        "path": "/api/session/list-user-sessions",
+        "query": {
+          "limit": "number",
+          "offset": "number",
+          "sortOrder": "string?",
+          "updatedAfter": "string?",
+          "anchorUpdatedAt": "string?"
+        },
+        "evidence": "pretty/s18.js:4759"
+      },
+      {
+        "method": "GET",
+        "path": "/api/session/{id}/info",
+        "evidence": "pretty/s18.js:4788"
+      },
+      {
+        "method": "POST",
+        "path": "/api/session/{id}/pdf",
+        "request": {
+          "html": "string"
+        },
+        "response": "application/pdf blob",
+        "evidence": "pretty/s18.js:4793"
+      },
+      {
+        "method": "POST",
+        "path": "/api/session/fix-latex",
+        "request": {
+          "latex": "string",
+          "error": "string",
+          "sessionId": "number",
+          "userId": "string?",
+          "turnIndex": "number?"
+        },
+        "response": {
+          "success": "boolean",
+          "fixedLatex": "string",
+          "error": "string?"
+        },
+        "evidence": "pretty/s3.js:13"
+      },
+      {
+        "method": "POST",
+        "path": "/api/session/feedback",
+        "evidence": "pretty/s17.js, pretty/s18.js"
+      },
+      {
+        "method": "POST",
+        "path": "/api/session/signed-upload-urls",
+        "request": {
+          "files": [
+            {
+              "fileName": "string",
+              "mimeType": "string"
+            }
+          ],
+          "sessionId": "number?"
+        },
+        "response": {
+          "uploads": [
+            {
+              "storagePath": "string",
+              "signedUrl": "string",
+              "thumbnailStoragePath": "string",
+              "thumbnailSignedUrl": "string"
+            }
+          ]
+        },
+        "evidence": "pretty/s9.js:702"
+      }
+    ],
+    "user": [
+      {
+        "method": "POST",
+        "path": "/api/user/check-session-gating",
+        "request": {
+          "sessionId": "number?"
+        },
+        "response": {
+          "status": "success",
+          "isPaid": "boolean",
+          "isAtDailySessionLimit": "boolean",
+          "isTrialExhausted": "boolean",
+          "hardPaywallEnabled": "boolean",
+          "lifetimeValidSessionsCount": "number",
+          "stopReason": "string|null",
+          "metrics": "object"
+        },
+        "evidence": "pretty/s8.js:73, pretty/s3.js:2701"
+      },
+      {
+        "method": "GET",
+        "path": "/api/user/settings",
+        "response": {
+          "status": "success",
+          "settings": {
+            "profile": {
+              "providedName": "string|null",
+              "gradeLevel": "string|null"
+            },
+            "preferences": {
+              "preferredLanguage": "string",
+              "micEnabledByDefault": "boolean",
+              "preferredSpeechSpeed": "number",
+              "preferredTutor": "alfrenzo|rubie|null"
+            }
+          }
+        },
+        "evidence": "pretty/s3.js:2747"
+      },
+      {
+        "method": "PATCH",
+        "path": "/api/user/settings",
+        "request": {
+          "preferences": "object"
+        },
+        "evidence": "pretty/s3.js:2775"
+      },
+      {
+        "method": "GET",
+        "path": "/api/user/tutor-models",
+        "response": {
+          "models": [
+            "model-id"
+          ]
+        },
+        "evidence": "pretty/s18.js:4904"
+      },
+      {
+        "method": "POST",
+        "path": "/api/user/restore-subscription",
+        "evidence": "pretty/s18.js"
+      },
+      {
+        "method": "POST",
+        "path": "/api/user/create-paddle-transaction",
+        "evidence": "pretty/s27.js"
+      },
+      {
+        "method": "POST",
+        "path": "/api/user/create-phone-trial-transaction",
+        "evidence": "pretty/s27.js"
+      },
+      {
+        "method": "POST",
+        "path": "/api/user/mobile-trial-started",
+        "evidence": "pretty/s27.js"
+      },
+      {
+        "method": "POST",
+        "path": "/api/user/sync-locale-cookie",
+        "evidence": "pretty/s24.js"
+      },
+      {
+        "method": "GET",
+        "path": "/api/user/academy",
+        "evidence": "pretty/s8.js"
+      }
+    ],
+    "attachment": [
+      {
+        "method": "POST",
+        "path": "/api/attachment/process",
+        "request": {
+          "storagePath": "string",
+          "fileName": "string",
+          "mimeType": "string",
+          "thumbnailPath": "string?",
+          "sessionId": "number?"
+        },
+        "response": "Document { chunks, processing, extractedText, ... }",
+        "evidence": "pretty/s9.js:770"
+      },
+      {
+        "method": "POST",
+        "path": "/api/attachment/process-with-status-streaming",
+        "request": {
+          "storagePath": "string",
+          "fileName": "string",
+          "mimeType": "string",
+          "thumbnailPath": "string?",
+          "sessionId": "number?",
+          "studyGuideProcessing": "object?"
+        },
+        "response": "NDJSON status stream, final Document",
+        "evidence": "pretty/s9.js:789"
+      },
+      {
+        "method": "POST",
+        "path": "/api/attachment/process-link-streaming",
+        "evidence": "pretty/s9.js:93"
+      },
+      {
+        "method": "POST",
+        "path": "/api/attachment/upload-link-thumbnail",
+        "evidence": "pretty/s9.js:211"
+      },
+      {
+        "method": "POST",
+        "path": "/api/attachment/update-prompt-suggestions",
+        "request": {
+          "extractedText": "string"
+        },
+        "response": {
+          "success": "boolean",
+          "suggestions": {
+            "topic": "string",
+            "exam": "string",
+            "homework": "string"
+          }
+        },
+        "evidence": "pretty/s8.js:34"
+      },
+      {
+        "method": "POST",
+        "path": "/api/attachment/consolidate-images",
+        "evidence": "pretty/s18.js"
+      },
+      {
+        "method": "POST",
+        "path": "/api/attachment/proxy-download",
+        "evidence": "pretty/s18.js"
+      }
+    ],
+    "voice": [
+      {
+        "method": "POST",
+        "path": "/api/voice/get-token",
+        "request": {
+          "tokenId": "token-1"
+        },
+        "response": {
+          "token": "string"
+        },
+        "note": "Ephemeral token for Deepgram / Azure / AssemblyAI",
+        "evidence": "pretty/s40.js:182, pretty/s40.js:413, pretty/s40.js:523"
+      },
+      {
+        "method": "POST",
+        "path": "/api/voice/get-tts",
+        "request": {
+          "text": "string",
+          "voice": "string",
+          "locale": "string",
+          "sampleRate": 24000,
+          "speed": "number",
+          "model": "model-3",
+          "prebufferMs": 640,
+          "style": "string?",
+          "styleDegree": "number?",
+          "includeTimestamps": "boolean",
+          "sessionId": "number",
+          "userId": "string",
+          "clientId": "string",
+          "turnIndex": "number",
+          "actionInternalId": "string"
+        },
+        "response": "audio chunks + viseme/word-boundary events (worker protocol)",
+        "note": "Body built inside TTS worker chunk; config observed in main bundle",
+        "evidence": "pretty/s36.js:308, pretty/s36.js:646"
+      },
+      {
+        "method": "POST",
+        "path": "/api/voice/track-stt-session",
+        "request": {
+          "provider": "deepgram|azure|assemblyai",
+          "model": "string",
+          "audio_duration_seconds": "number",
+          "session_duration_seconds": "number"
+        },
+        "evidence": "pretty/s40.js:255, pretty/s40.js:488"
+      }
+    ],
+    "misc": [
+      {
+        "method": "POST",
+        "path": "/api/client-log",
+        "evidence": "pretty/s17.js, pretty/s18.js, pretty/s24.js"
+      },
+      {
+        "method": "GET",
+        "path": "/api/dialogs/active",
+        "evidence": "pretty/s24.js"
+      },
+      {
+        "method": "POST",
+        "path": "/api/dialogs/dismiss",
+        "evidence": "pretty/s24.js"
+      },
+      {
+        "method": "POST",
+        "path": "/api/dialogs/complete",
+        "evidence": "pretty/s24.js"
+      },
+      {
+        "method": "GET",
+        "path": "/api/pricing/paddle-localized",
+        "evidence": "pretty/s18.js"
+      },
+      {
+        "method": "GET",
+        "path": "/api/doc-repo/document-thumbnail/{slug}",
+        "query": {
+          "path": "string?"
+        },
+        "evidence": "pretty/s3.js:3827"
+      },
+      {
+        "method": "GET",
+        "path": "/api/academy/sessions/{id}/details",
+        "evidence": "pretty/s18.js:4876"
+      },
+      {
+        "method": "GET",
+        "path": "/api/academy/students/{id}/sessions",
+        "evidence": "pretty/s18.js:4883"
+      }
+    ],
+    "admin": [
+      {
+        "method": "GET",
+        "path": "/api/admin/analytics/inspect-session/details",
+        "query": {
+          "id": "number",
+          "env": "string?"
+        },
+        "evidence": "pretty/s18.js:4806"
+      },
+      {
+        "method": "POST",
+        "path": "/api/admin/analytics/inspect-session/run-analysis",
+        "request": {
+          "sessionId": "number"
+        },
+        "evidence": "pretty/s18.js:4817"
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/analytics/sessions-data",
+        "response": "NDJSON stream",
+        "evidence": "pretty/s18.js:4856"
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/analytics/user-sessions",
+        "query": {
+          "query": "string"
+        },
+        "evidence": "pretty/s18.js:4851"
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/manual-intervention/live-sessions",
+        "query": {
+          "env": "string",
+          "since": "string?"
+        },
+        "evidence": "pretty/s18.js:4837"
+      },
+      {
+        "method": "GET",
+        "path": "/api/admin/manual-intervention/user-details",
+        "query": {
+          "userId": "string"
+        },
+        "evidence": "pretty/s18.js:4846"
+      }
+    ]
+  },
+  "session_events": [
+    "action_failed",
+    "captions_disabled",
+    "captions_enabled",
+    "chunk_retrieved",
+    "collapsed_block_expanded",
+    "context_collapsed",
+    "document_retrieved",
+    "lesson_plan_updated",
+    "message_received_from_tutor",
+    "message_sent_by_user",
+    "session_ended_by_tutor",
+    "session_ended_by_user",
+    "session_ended_with_paywall",
+    "session_ended_with_reset",
+    "session_paused",
+    "session_reset",
+    "session_resumed",
+    "session_started",
+    "session_unpaused",
+    "skill_loaded",
+    "speech_speed_changed",
+    "transcript_closed",
+    "transcript_opened",
+    "user_speech_language_changed",
+    "whiteboard_annotation_added",
+    "whiteboard_cleared",
+    "whiteboard_element_added",
+    "whiteboard_element_edited",
+    "whiteboard_element_removed"
+  ],
+  "commands": [
+    "speak",
+    "write_latex",
+    "write_text",
+    "draw",
+    "erase",
+    "highlight",
+    "circle_annotate",
+    "finish_tutoring_lesson",
+    "document_retrieved",
+    "chunk_retrieved",
+    "collapsed_block_expanded",
+    "skill_loaded",
+    "lesson_plan_updated",
+    "command_failed"
+  ],
+  "stream_frames": [
+    {
+      "shape": "{\"_stream\":\"svg\",\"elementId\":\"string\",\"chunk\":\"string\"}",
+      "purpose": "progressive SVG drawing",
+      "verified": true,
+      "frames_per_element": 23
+    }
+  ],
+  "verified": {
+    "captured_at": "2026-10-28",
+    "run": "rea-runs/studdyai/capture/live-turn-1.json",
+    "requests_captured": 246,
+    "generate_response_calls": 7,
+    "stream_frames": 88,
+    "delta_patches": 63,
+    "generate_response_response": {
+      "content_type": "text/event-stream",
+      "body_format": "ndjson (one JSON object per line, no 'data:' prefix)",
+      "header_note": "SSE content-type is used for streaming/no-cache semantics; client reads via fetch + ReadableStream, not EventSource",
+      "observed_response_headers": [
+        "content-type",
+        "cache-control: no-cache",
+        "x-matched-path",
+        "x-vercel-cache",
+        "x-vercel-id",
+        "server: Vercel",
+        "strict-transport-security"
+      ],
+      "x_tutor_ladder_source_observed": false,
+      "duration_range_ms": [
+        2140,
+        11549
+      ]
+    },
+    "command_frame_schema": {
+      "orderIndex": "number",
+      "commandName": "string",
+      "actionItem": {
+        "internalId": "uuid",
+        "name": "string",
+        "args": "object"
+      },
+      "denormalized_fields": [
+        "text",
+        "elementId",
+        "position",
+        "annotationId",
+        "targetElementId",
+        "color",
+        "textToMatch",
+        "latex",
+        "scaleFactor",
+        "generationState",
+        "maxDims",
+        "isCoordinatePlane",
+        "fileType",
+        "filePath",
+        "svgGenerationVariant"
+      ]
+    },
+    "command_args_verified": {
+      "speak": {
+        "type": "speak",
+        "text": "string",
+        "style": "chat|friendly",
+        "styledegree": "number (only when style=friendly)"
+      },
+      "write_text": {
+        "type": "write_text",
+        "id": "string",
+        "text": "html string",
+        "position": {
+          "spaceId": "string",
+          "columnId": "string|number"
+        }
+      },
+      "write_latex": {
+        "type": "write_latex",
+        "id": "string",
+        "latex": "string",
+        "color": "#RRGGBB",
+        "position": "..."
+      },
+      "draw": {
+        "type": "draw",
+        "id": "string",
+        "prompt": "string",
+        "isStructured": "boolean",
+        "maxDimensions": {
+          "maxWidth": "number",
+          "maxHeight": "number"
+        },
+        "position": "..."
+      },
+      "highlight": {
+        "type": "highlight",
+        "id": "string",
+        "targetElementId": "string",
+        "color": "yellow",
+        "textToMatch": "string"
+      },
+      "circle_annotate": {
+        "type": "circle_annotate",
+        "id": "string",
+        "targetElementId": "string",
+        "color": "blue|red",
+        "textToMatch": "string?"
+      }
+    },
+    "draw_lifecycle": {
+      "phase_1": "whiteboard_element_added with contentType=image-file, content='' , size={width,height}",
+      "phase_2": "whiteboard_element_edited with content=<public url>, size={width,height}",
+      "server_resizes": "requested maxDimensions 300x250 / 400x150 -> maxDims 528x288",
+      "storage": "https://umcvdgstciybysimigxa.supabase.co/storage/v1/object/public/generated_images/<epoch_ms>-<elementId>.png",
+      "delivered_via": "https://studdyai.com/<uuid> (1440px wide PNG, 550-780KB)"
+    },
+    "svg_stream": {
+      "frames_per_element": 23,
+      "chunk_size_chars": "40-80",
+      "shape": "{\"_stream\":\"svg\",\"elementId\":\"...\",\"chunk\":\"<svg ...\"}"
+    },
+    "delta_patch": {
+      "request": {
+        "appended": "SessionEvent[1]",
+        "removed": "[]",
+        "persistedCount": "number"
+      },
+      "response": {
+        "persistedCount": "number"
+      },
+      "response_bytes": 36,
+      "per_turn": "6-9 patches"
+    },
+    "gating": {
+      "response_example": {
+        "status": "success",
+        "isPaid": false,
+        "isSponsored": false,
+        "dailyValidSessionsCount": 1,
+        "lifetimeValidSessionsCount": 5,
+        "isTrialExhausted": true,
+        "isDailySessionCountExceeded": false,
+        "isSessionDurationExceeded": false,
+        "isPreviousDaySessionBlocked": false,
+        "isAtDailySessionLimit": false,
+        "sessionIncludedInTrial": false,
+        "numNonTrialedSessionsDoneToday": 1,
+        "hardPaywallEnabled": false,
+        "softFeatureGateEnabled": true,
+        "limits": {
+          "freeTrialMinutes": 15,
+          "dailySessionCountLimit": 2,
+          "perSessionTimeLimitMinutes": 10
+        },
+        "stopReason": null
+      },
+      "poll_cadence_ms": 10000
+    },
+    "settings_response_example": {
+      "status": "success",
+      "settings": {
+        "profile": {
+          "providedName": "string",
+          "gradeLevel": "string"
+        },
+        "preferences": {
+          "preferredLanguage": "de",
+          "micEnabledByDefault": false,
+          "preferredSpeechSpeed": 1,
+          "preferredTutor": "alfrenzo",
+          "heardAboutUs": "string",
+          "heardAboutUsOther": null
+        }
+      },
+      "email": "string (returned to client; redacted)"
+    },
+    "tutor_models_response_example": {
+      "models": [],
+      "admin": false
+    },
+    "events_endpoint": {
+      "request": "GET /api/session/{id}/events?from=0&limit=1000",
+      "response": {
+        "events": "SessionEvent[]",
+        "total": "number"
+      }
+    },
+    "client_log_schema": {
+      "events": [
+        {
+          "source": "AzureTTS",
+          "level": "info",
+          "message": "string",
+          "payload": "object",
+          "online": "boolean",
+          "effectiveType": "string",
+          "visibility": "string",
+          "sinceLoadMs": "number",
+          "session": "string?"
+        }
+      ]
+    },
+    "timing": {
+      "heartbeat_ms": 10000,
+      "gating_poll_ms": 10000,
+      "inactivity_pause_ms": 66000,
+      "patch_latency_ms": [
+        317,
+        1021
+      ]
+    },
+    "system_prompt_injection": {
+      "delimiter": "[SYSTEM] ... [END SYSTEM]",
+      "carried_in": "SessionEvent.text",
+      "example_event": "session_resumed"
+    },
+    "voice": {
+      "run": "rea-runs/studdyai/capture/live-voice-1.json",
+      "get_tts": {
+        "url": "/api/voice/get-tts?dpl=...",
+        "calls_observed": 41,
+        "request_body": {
+          "model": "model-3",
+          "text": "string (median 99 chars, max 169)",
+          "voice": "de-DE-Florian:DragonHDLatestNeural",
+          "sampleRate": 24000,
+          "speed": 1,
+          "responseFormat": "pcm",
+          "includeTimestamps": true,
+          "sessionId": "string",
+          "userId": "uuid",
+          "clientId": "studdy",
+          "turnIndex": "number",
+          "actionInternalId": "uuid"
+        },
+        "absent_fields": [
+          "locale",
+          "style",
+          "styleDegree",
+          "prebufferMs"
+        ],
+        "response": {
+          "content_type": "application/x-tts-framed-stream",
+          "cache_control": "no-store",
+          "framing": "[type:u8][length:u32 LE][payload]",
+          "types": {
+            "0": "PCM Int16 LE",
+            "1": "viseme JSON",
+            "2": "word-boundary JSON"
+          },
+          "server_frame_bytes": 2400,
+          "server_frame_ms": 50,
+          "client_rechunk_ms": 80,
+          "preroll_bytes": 30720
+        },
+        "observed": {
+          "bytes_range": [
+            143249,
+            588482
+          ],
+          "duration_ms_range": [
+            1100,
+            3665
+          ]
+        }
+      },
+      "get_token": {
+        "request_body": {
+          "tokenId": "token-3"
+        },
+        "response": {
+          "token": "Azure Speech JWT (region eastus, SpeechServices.S0) — redacted in evidence"
+        },
+        "calls_observed": 3
+      },
+      "stt": {
+        "sdk": "Microsoft Cognitive Services Speech SDK 1.47.0 (JavaScript)",
+        "audio": {
+          "bitspersample": 16,
+          "channelcount": 1,
+          "samplerate": 16000,
+          "model": "PushStream"
+        },
+        "recognition": "conversation",
+        "segmentation": {
+          "mode": "Conversation",
+          "segmentationSilenceTimeoutMs": 1000
+        },
+        "events": [
+          "turn.start",
+          "speech.startDetected",
+          "speech.hypothesis",
+          "speech.endDetected",
+          "speech.phrase"
+        ],
+        "detected_language_source": "server (PrimaryLanguage.language = de-DE)"
+      },
+      "track_stt_session": {
+        "request_body": {
+          "sessionId": "string",
+          "userId": "uuid",
+          "clientId": "studdy",
+          "provider": "azure",
+          "model": "azure-stt",
+          "closeReason": "muted",
+          "audioDurationSeconds": "number",
+          "sessionDurationSeconds": "number"
+        },
+        "response": {
+          "success": true
+        }
+      },
+      "tts_worker": {
+        "module": "_next/static/chunks/7488.016d207a7f1f7f57.js",
+        "size_bytes": 3436,
+        "messages_in": {
+          "process": "{taskId,text,config}",
+          "ready-for-next": "-",
+          "abort": "{taskId}"
+        },
+        "messages_out": [
+          "chunk",
+          "viseme",
+          "word-boundary",
+          "task-complete",
+          "done",
+          "stall",
+          "error"
+        ],
+        "stall_check_ms": 5000,
+        "stall_threshold_ms": 20000
+      }
+    },
+    "runs": [
+      {
+        "name": "live-turn-1",
+        "file": "capture/live-turn-1.json",
+        "duration_ms": 300000,
+        "requests": 246,
+        "generate_response_calls": 7,
+        "stream_frames": 88,
+        "patches": 63,
+        "session": 364562
+      },
+      {
+        "name": "live-voice-1",
+        "file": "capture/live-voice-1.json",
+        "duration_ms": 420000,
+        "requests": 243,
+        "generate_response_calls": 9,
+        "ws_frames": 312,
+        "get_tts": 41,
+        "get_token": 3,
+        "track_stt": 3,
+        "session": 364614
+      }
+    ]
+  },
+  "session_event_details": {
+    "session_paused": {
+      "reason": [
+        "inactivity",
+        "transcript_open"
+      ]
+    },
+    "session_unpaused": {
+      "reason": [
+        "pause_button",
+        "transcript_close"
+      ]
+    },
+    "transcript_closed": {
+      "source": [
+        "user"
+      ]
+    },
+    "whiteboard_annotation_added": {
+      "annotationType": [
+        "circle",
+        "highlight"
+      ],
+      "color": [
+        "blue",
+        "red",
+        "yellow"
+      ]
+    },
+    "whiteboard_element_added": {
+      "contentType": [
+        "html",
+        "latex",
+        "image-file"
+      ]
+    }
+  },
+  "unknowns": [
+    "collapse-context real response (turn threshold not reached)",
+    "auth cookie name",
+    "x-tutor-ladder-source emission conditions (absent in 16 responses)",
+    "STT websocket URL (host not in capture filter; token region=eastus)",
+    "track-stt-session closeReason values other than 'muted'"
+  ]
+}

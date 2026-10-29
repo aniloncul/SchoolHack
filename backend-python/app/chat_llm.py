@@ -93,6 +93,11 @@ def _chat_model() -> str:
     return _env_value("CHAT_MODEL") or DEFAULT_PRIMARY
 
 
+def env_value(name: str, default: str = "") -> str:
+    """Public access to the .env lookup (also used by the math tutor)."""
+    return _env_value(name) or default
+
+
 # ---------------------------------------------------------------------------
 # prompts (mirrors vectorstore/rag_v2/agent.py)
 # ---------------------------------------------------------------------------

@@ -37,6 +37,13 @@
     .lang-switch.is-light.is-compact a { font-size: .75rem; padding: .15rem .55rem; }
     /* English labels are a little longer; keep the header inside small phones. */
     @media (max-width: 400px) { header .navlink { padding-left: .3rem; padding-right: .3rem; } }
+    /* "Mathematik-Agent" is long: short label on phones, full label from 640px. */
+    .nav-label-short { display: inline; }
+    .nav-label-long { display: none; }
+    @media (min-width: 640px) {
+      .nav-label-short { display: none; }
+      .nav-label-long { display: inline; }
+    }
   </style>
   {% block head %}{% endblock %}
 </head>
@@ -59,7 +66,10 @@
         {% if role == 'student' %}
           <a href="/student/home" class="navlink hidden sm:inline{{ ' is-active' if path.startswith('/student/home') else '' }}">Startseite</a>
           <a href="/student/tutor" class="navlink{{ ' is-active' if path.startswith('/student/tutor') else '' }}">KI-Tutor</a>
-          <a href="/student" class="navlink{{ ' is-active' if path == '/student' or (path.startswith('/student/') and not path.startswith('/student/home') and not path.startswith('/student/tutor') and not path.startswith('/student/profile')) else '' }}">Fächer</a>
+          <a href="/student/mathematik" class="navlink{{ ' is-active' if path.startswith('/student/mathematik') else '' }}" title="Mathematik-Agent">
+            <span class="nav-label-long">Mathematik-Agent</span><span class="nav-label-short">Mathe</span>
+          </a>
+          <a href="/student" class="navlink{{ ' is-active' if path == '/student' or (path.startswith('/student/') and not path.startswith('/student/home') and not path.startswith('/student/tutor') and not path.startswith('/student/mathematik') and not path.startswith('/student/profile')) else '' }}">Fächer</a>
         {% elif role == 'teacher' %}
           <a href="/teacher" class="navlink{{ ' is-active' if path.startswith('/teacher') else '' }}">Startseite</a>
         {% endif %}

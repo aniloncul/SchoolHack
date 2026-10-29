@@ -1,22 +1,25 @@
 """School Hack – FastAPI app (teacher + student portals)."""
 from __future__ import annotations
 
+import asyncio
+import json
 import math
 import os
 import random
 import re
 from pathlib import Path
 
-from fastapi import FastAPI, Form, Request, Response
+from fastapi import FastAPI, File, Form, Request, Response, UploadFile
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
+from fastapi.responses import (FileResponse, HTMLResponse, JSONResponse, RedirectResponse,
+                               StreamingResponse)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import (agent, chat_llm, db, i18n, learning_profile, llm, subtopic_quizzes, subtopics_data,
-               vectorstore)
+from . import (agent, chat_llm, db, i18n, learning_profile, llm, math_agent, math_tutor,
+               pdf_text, subtopic_quizzes, subtopics_data, tts, vectorstore)
 from .chat_text import clean_answer, clean_topic, is_refusal, is_soft_refusal
 from .questions import (PASS_MARK, SKILLS, VISIBLE_SKILLS, VISIBLE_TOPICS,
                         SUBTOPIC_TITLES, SUBTOPIC_COVERS, SUBTOPIC_ORDER,
@@ -38,7 +41,8 @@ USERS = {"student": {"admin": "admin"}, "teacher": {"admin": "admin"}}
 
 SUBJECTS = [
     {"slug": "chemie", "name": "Chemie", "icon": "⚗️", "active": True, "desc": "Säuren & Laugen, Mol, Alkane"},
-    {"slug": "mathematik", "name": "Mathematik", "icon": "∑", "active": False, "desc": "Bald verfügbar"},
+    {"slug": "mathematik", "name": "Mathematik", "icon": "∑", "active": True,
+     "desc": "Gleichungen, Parabeln, Ungleichungen"},
     {"slug": "biologie", "name": "Biologie", "icon": "🧬", "active": False, "desc": "Bald verfügbar"},
     {"slug": "physik", "name": "Physik", "icon": "⚛", "active": False, "desc": "Bald verfügbar"},
 ]
@@ -603,6 +607,268 @@ async def hint(request: Request):
     given = body.get("given") or None
     err = grade(q, given)[1] if given else None
     return {"hint": llm.tutor_hint(q, given, int(body.get("attempt", 1)), err)}
+
+
+# ---------------------------------------------------------------------------
+# Mathematik-Agent: deterministic solver, the model only narrates
+# ---------------------------------------------------------------------------
+MAX_MATH_CHARS = 400
+
+MATH_EXPLAIN_SYSTEM = (
+    "Du bist ein geduldiger Mathematik-Tutor für Klasse 9 in Berlin. "
+    "Erkläre in höchstens drei kurzen Sätzen auf Deutsch, WARUM das Ergebnis so ist. "
+    "Benutze ausschließlich die Zahlen aus den gelieferten Fakten und erfinde keine neuen. "
+    "Fehlt eine Zahl, bleib allgemein. Keine Begrüßung, keine Floskeln."
+)
+
+
+@app.get("/student/mathematik", response_class=HTMLResponse)
+def mathematik(request: Request):
+    if (r := need(request, "student")):
+        return r
+    return render(request, "mathematik.html")
+
+
+@app.post("/api/math/agent")
+async def math_agent_stream(request: Request):
+    """NDJSON: meta -> command* -> done. Jede Zahl kommt aus math_agent."""
+    if role(request) != "student":
+        return JSONResponse({"error": "login"}, 401)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Anfrage."}, 400)
+    if not isinstance(body, dict):
+        return JSONResponse({"error": "Ungültige Anfrage."}, 400)
+
+    message = str(body.get("message") or "").strip()
+    if not message:
+        return JSONResponse({"error": "message required"}, 400)
+    if len(message) > MAX_MATH_CHARS:
+        return JSONResponse({"error": f"Die Aufgabe ist zu lang (max. {MAX_MATH_CHARS} Zeichen)."}, 400)
+
+    result = await run_in_threadpool(math_agent.build_lesson, message)
+
+    async def stream():
+        meta = {"type": "meta", "ok": result["ok"], "title": result["title"],
+                "note": result["note"]}
+        yield json.dumps(meta, ensure_ascii=False) + "\n"
+
+        for cmd in result["commands"]:
+            yield json.dumps({"type": "command", "command": cmd}, ensure_ascii=False) + "\n"
+            pause = 0.6 if cmd.get("commandName") == "draw" else 0.22
+            await asyncio.sleep(pause)
+
+        payload = {"type": "done", "ok": result["ok"]}
+        if result["ok"]:
+            payload["facts"] = {"title": result["title"], "problem": message,
+                                "facts": result.get("facts") or {}}
+        yield json.dumps(payload, ensure_ascii=False) + "\n"
+
+    return StreamingResponse(stream(), media_type="application/x-ndjson",
+                             headers={"Cache-Control": "no-store", "X-Accel-Buffering": "no"})
+
+
+@app.post("/api/math/explain")
+async def math_explain(request: Request):
+    """Optional narration: the prompt carries the computed facts, never new numbers."""
+    if role(request) != "student":
+        return JSONResponse({"error": "login"}, 401)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Anfrage."}, 400)
+    if not isinstance(body, dict):
+        return JSONResponse({"error": "Ungültige Anfrage."}, 400)
+
+    facts = body.get("facts") if isinstance(body.get("facts"), dict) else {}
+    title = str(body.get("title") or "")[:120]
+    problem = str(body.get("problem") or "")[:400]
+
+    lines = []
+    for key in ("roots", "points", "above", "interval_text", "D"):
+        value = facts.get(key)
+        if value:
+            if isinstance(value, list):
+                value = ", ".join(str(v) for v in value)
+            lines.append(f"{key}: {value}")
+
+    prompt = (f"Aufgabe: {problem}\nArt: {title}\nBerechnete Fakten:\n"
+              + ("\n".join(lines) or "- keine -"))
+    text = await run_in_threadpool(llm.ask, MATH_EXPLAIN_SYSTEM, prompt, 260)
+    if not text:
+        return JSONResponse({"text": _math_fallback(facts, title), "model": False})
+    return JSONResponse({"text": text, "model": True})
+
+
+MAX_PDF_BYTES = 12 * 1024 * 1024
+MAX_TUTOR_CHARS = 1200
+
+
+@app.post("/api/math/pdf")
+async def math_pdf(request: Request, file: UploadFile = File(...)):
+    """PDF lesen und mathematische Aufgaben daraus schneiden.
+
+    Der Text wird mit der Standardbibliothek gelesen (kein OCR). Scans werden
+    klar abgelehnt, statt Zahlen zu raten.
+    """
+    if role(request) != "student":
+        return JSONResponse({"error": "login"}, 401)
+    name = (file.filename or "").lower()
+    if name and not name.endswith(".pdf"):
+        return JSONResponse({"error": "Bitte lade eine PDF-Datei hoch."}, 400)
+    data = await file.read(MAX_PDF_BYTES + 1)
+    if not data:
+        return JSONResponse({"error": "Die Datei ist leer."}, 400)
+    if len(data) > MAX_PDF_BYTES:
+        return JSONResponse({"error": "Das PDF ist zu groß (max. 12 MB)."}, 400)
+
+    try:
+        doc = await run_in_threadpool(pdf_text.extract, data)
+        tasks = await run_in_threadpool(pdf_text.split_tasks, doc["text"])
+    except pdf_text.PdfError as exc:
+        return JSONResponse({"error": str(exc)}, 400)
+    except Exception as exc:  # kaputte Datei darf die Seite nicht abschiessen
+        return JSONResponse({"error": "Das PDF konnte nicht gelesen werden (" +
+                             str(exc)[:80] + ")."}, 400)
+
+    has_math = any(t.get("ok") for t in tasks)
+    return {
+        "ok": True,
+        "page_count": doc["page_count"],
+        "shown_pages": doc["shown_pages"],
+        "chars": doc["chars"],
+        "truncated": doc["truncated"],
+        "pages": [{"no": p["no"], "chars": len(p["text"])} for p in doc["pages"]],
+        "tasks": tasks,
+        "has_math": has_math,
+        "preview": doc["text"][:600],
+    }
+
+
+@app.post("/api/math/tutor")
+async def math_tutor_turn(request: Request):
+    """Ein Unterrichtsturm wie bei der Vorlage: ein Schritt, dann eine Frage."""
+    if role(request) != "student":
+        return JSONResponse({"error": "login"}, 401)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Anfrage."}, 400)
+    if not isinstance(body, dict):
+        return JSONResponse({"error": "Ungültige Anfrage."}, 400)
+
+    task = str(body.get("task") or "").strip()
+    if not task:
+        return JSONResponse({"error": "task required"}, 400)
+    if len(task) > MAX_TUTOR_CHARS:
+        return JSONResponse({"error": f"Die Aufgabe ist zu lang (max. {MAX_TUTOR_CHARS} Zeichen)."}, 400)
+
+    raw_history = body.get("history")
+    history = []
+    if isinstance(raw_history, list):
+        for item in raw_history[-12:]:
+            if isinstance(item, dict):
+                history.append({"say": str(item.get("say") or "")[:600],
+                                "question": str(item.get("question") or "")[:300],
+                                "answer": str(item.get("answer") or "")[:200]})
+
+    try:
+        turn = int(body.get("turn") or 0)
+    except (TypeError, ValueError):
+        turn = 0
+    answer = str(body.get("answer") or "")[:200]
+
+    expr = str(body.get("expr") or "").strip()[:MAX_MATH_CHARS]
+
+    result = await run_in_threadpool(math_tutor.next_turn, task, history, answer, turn, expr)
+    if not result.get("ok"):
+        return JSONResponse(result, 503)
+    return result
+
+
+@app.post("/api/math/plan")
+async def math_plan(request: Request):
+    """Offline-Unterricht: derselbe Ablauf, aber alle Zahlen aus dem Rechenkern."""
+    if role(request) != "student":
+        return JSONResponse({"error": "login"}, 401)
+    try:
+        body = await request.json()
+    except Exception:
+        return JSONResponse({"error": "Ungültige Anfrage."}, 400)
+    if not isinstance(body, dict):
+        return JSONResponse({"error": "Ungültige Anfrage."}, 400)
+    message = str(body.get("message") or "").strip()
+    if not message:
+        return JSONResponse({"error": "message required"}, 400)
+    if len(message) > MAX_MATH_CHARS:
+        return JSONResponse({"error": f"Die Aufgabe ist zu lang (max. {MAX_MATH_CHARS} Zeichen)."}, 400)
+
+    plan = await run_in_threadpool(math_agent.build_plan, message)
+    return plan
+
+
+def _math_fallback(facts: dict, title: str) -> str:
+    """Begruendung ohne Modell: nur die bereits geprueften Zahlen."""
+    parts = []
+    points = facts.get("points") or []
+    roots = facts.get("roots") or []
+    interval = facts.get("interval_text") or facts.get("interval")
+    if points:
+        parts.append("Die Schnittpunkte sind " + " und ".join(str(p) for p in points) + ".")
+    elif interval:
+        parts.append("Die Lösungsmenge ist " + str(interval) + ".")
+    elif roots:
+        parts.append("Die Lösungen sind x = " + ", ".join(str(r) for r in roots) + ".")
+    if facts.get("above"):
+        parts.append(str(facts["above"]))
+    if roots and (points or interval):
+        parts.append("Die Nullstellen der Differenz liegen bei x = " + ", ".join(str(r) for r in roots) + ".")
+    if facts.get("D") is not None:
+        parts.append("Die Diskriminante ist D = " + str(facts["D"]) + ".")
+    tail = ("Das Sprachmodell antwortet gerade nicht; die Begründung bleibt deshalb knapp. "
+            "Die Zahlen oben sind exakt berechnet und geprüft.")
+    return ((" ".join(parts) + " ") if parts else "") + tail
+
+
+@app.get("/api/math/tts")
+@app.post("/api/math/tts")
+async def math_tts(request: Request, text: str = "", lang: str = "de"):
+    """Azure Neural Voice / Edge TTS stream endpoint for math tutor speech."""
+    if role(request) not in {"student", "teacher"}:
+        return JSONResponse({"error": "login"}, 401)
+
+    req_text = text
+    req_lang = lang
+    if request.method == "POST":
+        try:
+            body = await request.json()
+            if isinstance(body, dict):
+                req_text = str(body.get("text") or req_text)
+                req_lang = str(body.get("lang") or req_lang)
+        except Exception:
+            pass
+
+    req_text = req_text.strip()
+    if not req_text:
+        return JSONResponse({"error": "text required"}, 400)
+
+    # Cap length to prevent abuse (e.g. 1500 chars per speech turn)
+    if len(req_text) > 1500:
+        req_text = req_text[:1500]
+
+    audio_bytes = await tts.synthesize_speech(req_text, lang=req_lang)
+    if not audio_bytes:
+        return JSONResponse({"error": "synthesis failed"}, 500)
+
+    return Response(
+        content=audio_bytes,
+        media_type="audio/mpeg",
+        headers={
+            "Cache-Control": "public, max-age=86400",
+            "Content-Disposition": 'inline; filename="speech.mp3"',
+        },
+    )
 
 
 # ---------------------------------------------------------------------------
