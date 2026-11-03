@@ -1,260 +1,334 @@
-# School Hack — ChemTutor
+# 🏫 SchoolHack — AI-Powered STEM Learning & Infinite Whiteboard Tutor
 
-Chemistry practice app for **Klasse 9 (Berlin)** with a student portal, a KI-Tutor
-chat and a teacher dashboard. Python + FastAPI + SQLite: one program and one
-OpenRouter key.
+> **Next-generation intelligent tutoring for STEM education (Klasse 9 Berlin Curriculum).**  
+> Powered by a **deterministic symbolic math engine**, an **infinite interactive whiteboard**, **voice-synthesized Socratic tutoring**, and **multimodal textbook RAG**.
 
-> This file only explains **how to start the app on your own laptop**, step by step.
-> If you have never started a Python project before, follow the steps in order and
-> copy the commands exactly as they are written.
-
-## Put it online (free)
-
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/RezaurRahman47/SchoolHack/tree/main)
-
-Click the button, sign in to Render with GitHub, paste your `OPENROUTER_API_KEY`
-when asked (optional) and click **Deploy**. After 2–4 minutes you get a public link
-such as `https://schoolhack.onrender.com` that anyone can open. It deploys the
-branch `main` with the settings in [`render.yaml`](render.yaml); details and
-the manual way are in [docs/DEPLOY_RENDER.md](docs/DEPLOY_RENDER.md).
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/aniloncul/SchoolHack/tree/main)
+[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.110%2B-009688.svg)](https://fastapi.tiangolo.com/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Berlin RLP](https://img.shields.io/badge/Curriculum-Berlin%20RLP%20Klasse%209-purple.svg)](https://bildungsserver.berlin-brandenburg.de/)
 
 ---
 
-## Before you start
+## 🚀 The Pitch: Why SchoolHack?
 
-You need two things.
+Traditional AI chatbots (like ChatGPT or Claude) fail students in STEM:
+1. **They hallucinate math:** LLMs predict text probabilistically. In multi-step algebra or chemistry stoichiometry, they frequently hallucinate arithmetic errors or write mathematically invalid steps.
+2. **They rob the "Aha!" moment:** Typical chatbots give the final answer immediately, doing the student's homework instead of teaching.
+3. **They lack visual pedagogy:** Real tutoring happens on a blackboard or worksheet with diagrams, highlighted terms, and step-by-step annotations.
 
-**1. Python 3.10 or newer.** Open a terminal and check:
+### The SchoolHack Solution: *Zero-Hallucination AI Tutoring*
 
-```bash
-python3 --version                # macOS / Linux
-python --version                 # Windows
-```
-
-If it prints `Python 3.10` (or higher), you are ready. If it says
-*command not found*, install Python first:
-
-- **macOS:** `brew install python@3.12` — or download it from <https://www.python.org/downloads/>
-- **Windows:** download it from <https://www.python.org/downloads/> and **tick
-  "Add Python to PATH"** during the installation. Then close the terminal, open a
-  new one and run `python --version` again.
-
-> On Windows the command is `python`, not `python3`. Every step below shows both.
-
-**2. An OpenRouter API key** — this is what the AI tutor uses:
-
-1. Go to <https://openrouter.ai> and sign up (free).
-2. Open **Keys** → **Create key**.
-3. Copy the key. It looks like `sk-or-v1-...`.
-
-Signing up and creating a key are free. Most models need a little credit on your
-OpenRouter account; if the account has none, the chat answers *"nicht erreichbar"*
-just like a missing key. Without a key the app still starts and everything else
-works — only the chat stays silent.
+SchoolHack solves this by separating **computation** from **pedagogy**:
+* **The Math & Chemistry Engines are Deterministic:** Every calculation, quadratic equation, intersection point, vertex, and chemical balance is computed with exact symbolic algorithms (using Python `Fraction` and curriculum graph rules). **The AI model never computes numbers.**
+* **The AI is Strictly a Socratic Tutor:** The LLM acts purely as the patient teacher who observes the student's attempts, provides nudges without spoiling answers, and speaks naturally via Text-to-Speech (TTS).
+* **The Infinite Whiteboard Brings Math to Life:** An interactive, pannable and zoomable canvas renders exact KaTeX formulas, dynamic SVG plots, and guided steps synchronized with live voice narration.
 
 ---
 
-## Step 1 — Download the project
+## 🎬 Live Demonstration: The Interactive Mathematik-Agent
 
-```bash
-git clone https://github.com/RezaurRahman47/SchoolHack.git
-cd SchoolHack
-```
+Experience step-by-step mathematical learning on a digital blackboard. Upload a PDF homework worksheet or enter equations directly; the agent extracts the problems, computes exact proofs, plots dynamic graphs, and teaches you step-by-step with voice and text.
 
-No Git installed? Open the GitHub page, click the green **Code** button →
-**Download ZIP**, unzip it and open a terminal in the unzipped folder (for example
-`SchoolHack-main`) instead of running the two lines above.
+### 📹 Video Showcase
 
-## Step 2 — Go into the app folder
+<!-- Video Player: Drop your video recording into docs/videos/math-agent-demo.mp4 or link your YouTube/Loom demo -->
+<div align="center">
+  <video src="docs/videos/math-agent-demo.mp4" width="100%" max-width="850px" controls autoplay loop muted poster="screenshots/math-agent-whiteboard.png">
+    <p>Your browser does not support HTML5 video. <a href="docs/videos/math-agent-demo.mp4"><b>▶️ Click here to download or view the demo video</b></a>.</p>
+  </video>
+  <p><i>Walkthrough: Automatic PDF problem extraction &rarr; Deterministic calculation &rarr; Live whiteboard rendering &rarr; Voice-guided tutoring.</i></p>
+</div>
 
-```bash
-cd backend-python
-```
-
-All the following commands are typed inside this folder. If you type `ls`
-(macOS/Linux) or `dir` (Windows) you should see `app`, `requirements.txt` and
-`run.sh`.
-
-## Step 3 — Create a virtual environment
-
-A *virtual environment* is a private box for this project's packages. It keeps the
-project separate from the rest of your computer, and you only create it once:
-
-```bash
-python3 -m venv .venv            # macOS / Linux
-```
-
-```powershell
-python -m venv .venv             # Windows
-```
-
-This creates the folder `backend-python/.venv` — you never have to touch it.
-
-## Step 4 — Turn the virtual environment on
-
-```bash
-source .venv/bin/activate        # macOS / Linux
-```
-
-```powershell
-.venv\Scripts\activate           # Windows (PowerShell)
-```
-
-Your terminal line now starts with `(.venv)`. That means it is on.
-
-> Repeat this step **every time** you open a new terminal for this project. If you
-> see `command not found: uvicorn` later, you probably forgot it.
->
-> Windows: if PowerShell says *"running scripts is disabled on this system"*, run
-> `Set-ExecutionPolicy -Scope Process RemoteSigned` first, then try again — or use
-> `cmd` and `.venv\Scripts\activate.bat`.
-
-## Step 5 — Install the dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-This installs what the app needs (FastAPI, Uvicorn, Jinja2 — a few small packages,
-about 10 seconds).
-
-## Step 6 — Add your API key
-
-You are still in the `backend-python` folder. Create your personal settings file
-from the example file:
-
-```bash
-cp .env.example .env             # macOS / Linux
-```
-
-```powershell
-copy .env.example .env           # Windows
-```
-
-The full path of this new file is:
-
-```
-SchoolHack/backend-python/.env
-```
-
-Open it in a text editor and put your key behind `OPENROUTER_API_KEY=`:
-
-- `code .env` — VS Code
-- `open -e .env` — TextEdit (macOS)
-- `notepad .env` — Notepad (Windows)
-
-Or edit it right in the terminal: `nano .env`, type or paste the line, then press
-`Ctrl + O`, `Enter` and `Ctrl + X`.
-
-The line must look exactly like this, only with your own key instead of `...`:
-
-```
-OPENROUTER_API_KEY=sk-or-v1-...your own key here...
-```
-
-Save the file. (`.env` is ignored by Git, so your key stays on your machine and is
-never uploaded.)
-
-## Step 7 — Start the app
-
-```bash
-python -m uvicorn app.main:app --reload --port 8000
-```
-
-You should see something like:
-
-```
-Uvicorn running on http://127.0.0.1:8000
-INFO:     Application startup complete.
-```
-
-**Leave this terminal open.** The app runs as long as the terminal is open; press
-`Ctrl + C` to stop it. The database is created automatically on the first start at
-`backend-python/data/chemtutor.db` — you never have to create it yourself.
-
-## Step 8 — Open it in your browser
-
-Go to **<http://localhost:8000>** and log in:
-
-| | Username | Password |
-|---|---|---|
-| Student | `admin` | `admin` |
-| Teacher | `admin` | `admin` |
-
-Good places to look: **KI-Tutor** (the chat), **Tests**, and **Profil → Mein
-Lernprofil**.
-
-**German or English:** use the **DE | EN** switch at the top right (on a phone:
-**Profil → Sprache**, or **Settings**). Everything switches, including test
-questions, answers and the AI tutor's replies. The choice is remembered.
+> **Note on Video File:** To view the embedded video locally or in hosting environments, place your video capture at [`docs/videos/math-agent-demo.mp4`](docs/videos/). You can also watch or download recorded walkthrough sessions in [`rea-runs/studdyai/`](rea-runs/studdyai/).
 
 ---
 
-## German and English (for developers)
+### 📸 Whiteboard in Action
 
-The app is written in German. English is added in the browser, so templates,
-questions and grading stay as they are:
+<div align="center">
+  <img src="screenshots/math-agent-whiteboard.png" alt="Mathematik-Agent Infinite Whiteboard" width="100%" style="border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.15);" />
+  <p><b>Figure 1:</b> <i>Interactive whiteboard with KaTeX equation breakdowns, coordinate system visualization, auto-following camera, and real-time step explanations.</i></p>
+</div>
 
-| File | What it does |
-|---|---|
-| `backend-python/app/static/i18n/en.js` | German → English dictionary, plus patterns for text with numbers or names |
-| `backend-python/app/static/i18n.js` | Swaps the shown text (also text added later by JavaScript, popups and chart labels). Form values stay German, so grading is unchanged |
-| `backend-python/app/i18n.py` | Remembers the language (cookie) and asks the AI model to answer in English |
-
-**Added new German text?** Add it to `en.js`: the exact German text as the key, the
-English as the value. To find anything missing, switch to EN, open the page and run
-`SH_I18N.missing()` in the browser console.
+<div align="center">
+  <img src="screenshots/studdyai-canvas.png" alt="Canvas Layout & Multi-Space View" width="100%" style="border-radius: 8px; box-shadow: 0 4px 14px rgba(0,0,0,0.15);" />
+  <p><b>Figure 2:</b> <i>Multi-space layout: structured task columns (Problem &rarr; Derivation &rarr; Visuals &rarr; Result) with real-time TTS audio playback.</i></p>
+</div>
 
 ---
 
-## Starting it again later
+## 🌟 Key Features
 
-Steps 2–6 (venv, packages, key) are one-time only. To start the app another day,
-open a new terminal and run:
+### 1. 🧮 Interactive Mathematik-Agent
+* **Automated PDF Extraction (`pdf_text.py`):** Drag and drop your homework PDF. SchoolHack parses the document, normalizes OCR anomalies, isolates individual math tasks, and renders LaTeX equations.
+* **Exact Deterministic Math Solver (`math_agent.py`):**
+  * Solves linear and quadratic equations ($ax^2 + bx + c = 0$).
+  * Computes exact parabola intersections ($f(x) = g(x)$), roots, and vertex forms ($S(d|e)$).
+  * Handles parametric systems with parameter $a$ (e.g. $-4x^2 + 15ax = 2x^2 - 9ax + 18a^2$).
+  * Analyzes domain-restricted inequalities (e.g. $-0.1x^2 + 3x - 6 > -0.2x^2 + 5x$ on $0 \le x \le 24$).
+  * Uses arbitrary-precision `Fraction` math to avoid floating point inaccuracies.
+* **Infinite Pannable & Zoomable Whiteboard (`mathematik.html`):**
+  * Smooth pan and zoom from 30% to 200%.
+  * **Auto-Follow Camera ("Folgen"):** The camera automatically glides and frames newly written equations.
+  * Native KaTeX typesetting and mathematical coordinate systems rendered in crisp vector SVG.
+* **Voice-Driven Socratic Tutor (`math_tutor.py` & `tts.py`):**
+  * Generates audio voice narration for every instructional turn.
+  * Follows pedagogical guidelines: encourages self-correction, gives tiered hints, and never speaks the final answer prematurely.
 
-```bash
-cd SchoolHack/backend-python        # the folder you cloned or unzipped
-source .venv/bin/activate           # .venv\Scripts\activate   on Windows
-python -m uvicorn app.main:app --reload --port 8000
+### 2. 🧪 ChemTutor & Science Platform (Klasse 9 Berlin)
+* **Curriculum Skill Graph:** 30 competency nodes based on the Berlin Rahmenlehrplan (RLP) covering atomic models, chemical bonds, reactions, acids & bases, and stoichiometry.
+* **Smart Diagnostic Testing Engine:** Generates randomized 30-question diagnostic quizzes with targeted trap detection for common student misconceptions.
+* **Student Mastery Profile:** Tracks individual concept mastery. Right answers close the competency gap; mistakes trigger targeted remedial rounds.
+
+### 3. 👩‍🏫 Teacher Superpowers & Classroom Analytics
+* **One-Click Gap Finder:** Instantly analyzes test scores across the entire class to surface hidden conceptual blockers.
+* **Support Grouping:** Automatically groups students who share identical conceptual gaps for targeted small-group instruction.
+* **Mastery Radar & Heatmaps:** Multi-subject radar visualization across Chemistry, Mathematics, Physics, and Biology.
+
+### 4. 📚 Multimodal Fokus Chemie RAG v2
+* **Hybrid Retrieval:** BM25 lexical search combined with Google `EmbeddingGemma 2` and BAAI `bge-reranker-v2-m3`.
+* **Multimodal Indexing:** 729 text chunks and 162 textbook figures with vision gating—guaranteeing answers are grounded in the official textbook.
+
+### 5. 🌐 Full Bilingual Architecture (German & English)
+* Instant **DE | EN** language toggle in the navigation bar.
+* Client-side text mapping preserves grading logic while translating questions, explanations, and LLM prompts on the fly.
+
+---
+
+## 🏛️ System Architecture
+
+SchoolHack is built as a clean, modular Python application using FastAPI, Jinja2 templates, modern ES6, and SQLite, with optional AI acceleration.
+
+```mermaid
+flowchart TB
+    classDef client fill:#f1ecff,stroke:#6c4bf4,color:#1d2550,stroke-width:2px
+    classDef backend fill:#e3f1ff,stroke:#5cc8ff,color:#1d2550,stroke-width:2px
+    classDef engine fill:#ddf8ec,stroke:#22c58b,color:#1d2550,stroke-width:2px
+    classDef ai fill:#fff4cc,stroke:#e0a400,color:#1d2550,stroke-width:2px
+
+    subgraph C["Frontend & Whiteboard Canvas"]
+        UI["Student & Teacher Portals<br/>HTML5 / Tailwind / Vanilla JS"]
+        Board["Infinite Canvas (Figboard)<br/>KaTeX Math + SVG Plotting + Pan/Zoom"]
+        Audio["Voice Player (TTS Audio)<br/>Web Audio API"]
+    end
+
+    subgraph B["FastAPI Core (backend-python)"]
+        Router["Application Router<br/>Portals, Quizzes, Teacher Tools"]
+        PDF["PDF Ingestion & OCR<br/>pdf_text.py"]
+        Tutor["Socratic Dialogue Orchestrator<br/>math_tutor.py"]
+        TTS["Audio Voice Synthesizer<br/>tts.py"]
+    end
+
+    subgraph E["Deterministic Engines (Zero Hallucination)"]
+        MathEng["Symbolic Math Engine<br/>math_agent.py (Fraction, Exact Algebra)"]
+        ChemEng["Curriculum Skill Engine<br/>30 RLP Competencies & Grader"]
+        DB[("SQLite Database<br/>chemtutor.db (Mastery & Profiles)")]
+    end
+
+    subgraph A["AI & Retrieval Layer (Optional)"]
+        OpenRouter["OpenRouter / Gemini 3 Flash<br/>Pedagogical Nudges & Explanations"]
+        RAG["Multimodal Vectorstore<br/>EmbeddingGemma 2 + BGE Reranker v2"]
+    end
+
+    UI --> Router
+    Board --> Router
+    Router --> PDF
+    Router --> Tutor
+    Router --> ChemEng
+    Tutor --> MathEng
+    Tutor --> OpenRouter
+    Tutor --> TTS
+    TTS --> Audio
+    MathEng --> Board
+    ChemEng --> DB
+    Router --> RAG
+
+    class UI,Board,Audio client
+    class Router,PDF,Tutor,TTS backend
+    class MathEng,ChemEng,DB engine
+    class OpenRouter,RAG ai
 ```
 
-If you are already inside the project folder, skip the first line and use
-`cd backend-python`.
-
 ---
 
-## Shortcut: one script instead of steps 3–5 and 7
+### How the Mathematik-Agent Works (Protocol Flow)
 
-The project also ships start scripts that create the venv, install the packages
-and create `.env` from the example:
+```mermaid
+sequenceDiagram
+    autonumber
+    actor Student as 🧒 Student
+    participant UI as 🎨 Whiteboard UI
+    participant PDF as 📄 PDF Parser
+    participant Solver as 🧮 Deterministic Solver
+    participant LLM as 🤖 Pedagogical AI
+    participant TTS as 🎙️ TTS Synthesizer
 
-```bash
-./run.sh                         # from the backend-python folder (macOS / Linux)
+    Student->>UI: Uploads worksheet (PDF) or enters problem
+    UI->>PDF: Extract text & mathematical formulas
+    PDF-->>Solver: LaTeX expressions & tasks
+    Solver->>Solver: Computes exact roots, vertex form, intersections
+    Solver->>UI: Emits 7-Command Board Stream (write_latex, draw SVG, create spaces)
+    UI->>UI: Typesets KaTeX, draws coordinate graph & glides camera
+    Solver->>LLM: Delivers verified facts & step requirements
+    LLM->>TTS: Generates Socratic prompt ("Was ist der erste Schritt?")
+    TTS-->>UI: Streams voice audio + transcript message
+    UI-->>Student: Speaks hint & awaits student response
 ```
 
-On Windows, double-click `run.bat`.
+### The 7-Command Whiteboard Protocol
 
-You still add your key once (Step 6) — both scripts print a reminder if the key is
-still missing.
-
----
-
-## If something goes wrong
-
-| What you see | What to do |
-|---|---|
-| `python3: command not found` | Python is not installed — or you are on Windows, where the command is `python` (see **Before you start**) |
-| `command not found: uvicorn` | The venv is not active → `source .venv/bin/activate`, or always use `python -m uvicorn ...` |
-| Chat answers *"Der KI-Tutor ist gerade nicht erreichbar."* | The key in `backend-python/.env` is missing or wrong — or the OpenRouter account has no credit |
-| You cannot find `.env` | It sits next to `requirements.txt`: `SchoolHack/backend-python/.env` (Step 6) |
-| `Address already in use` (port 8000) | Another program is already using port 8000 → close it, or start with `--port 8001` and open <http://localhost:8001> |
-| The page looks old after an update | Hard reload the browser: `Cmd + Shift + R` (Mac) / `Ctrl + Shift + R` (Windows) |
-| `ModuleNotFoundError: No module named 'app'` | You are in the wrong folder → `cd backend-python` and run the command there |
+The math agent controls the infinite whiteboard via an event-driven command stream:
+1. `clear_board`: Resets canvas spaces for a new exercise.
+2. `create_space(id, title)`: Creates structured columns (`aufgabe`, `loesung`, `grafik`).
+3. `write_latex(space, expr)`: Renders KaTeX mathematical formulas into the target space.
+4. `write_text(space, text)`: Appends descriptive notes and intermediate steps.
+5. `draw(space, type, data)`: Dynamically generates Cartesian coordinate systems and parabolic curves in SVG.
+6. `focus_camera(target)`: Animates the viewport to highlight the current step.
+7. `speak(text)`: Synthesizes accompanying speech for voice-guided learning.
 
 ---
 
-## Want to know more?
+## ⚡ Quick Start & Installation
 
-- [backend-python/README.md](backend-python/README.md) — the app in detail, plus the team test checklist
-- [docs/technical-flow.md](docs/technical-flow.md) — how the parts fit together
-- [docs/business-flow.md](docs/business-flow.md) — what the product is for
+### Option 1: 1-Click Deploy to Cloud (Free)
+
+Deploy instantly to Render:
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/aniloncul/SchoolHack/tree/main)
+
+---
+
+### Option 2: Run Locally (macOS, Linux, Windows)
+
+#### Prerequisites
+* **Python 3.10+** (`python3 --version` or `python --version`)
+* **OpenRouter API Key** *(Optional — without a key, the deterministic solver and built-in pedagogical fallbacks work completely)*
+
+#### Steps
+
+1. **Clone the repository:**
+   ```bash
+   git clone https://github.com/aniloncul/SchoolHack.git
+   cd SchoolHack
+   ```
+
+2. **Navigate to the application folder and set up environment:**
+   ```bash
+   cd backend-python
+
+   # On macOS / Linux:
+   python3 -m venv .venv
+   source .venv/bin/activate
+
+   # On Windows:
+   python -m venv .venv
+   .venv\Scripts\activate
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+4. **Configure your environment (API Key):**
+   ```bash
+   cp .env.example .env
+   ```
+   Open `.env` and set your key:
+   ```env
+   OPENROUTER_API_KEY=sk-or-v1-your-key-here
+   ```
+
+5. **Start the application:**
+   ```bash
+   python -m uvicorn app.main:app --reload --port 8000
+   ```
+   *(Or simply run `./run.sh` on macOS/Linux or `run.bat` on Windows).*
+
+6. **Open in browser:**
+   Open [http://localhost:8000](http://localhost:8000).
+
+---
+
+### Option 3: Full Stack Demo with Multimodal RAG
+
+To start both the **FastAPI Application** (port 8000) and the **Fokus Chemie RAG Server** (port 8080):
+
+```bash
+./setup.sh      # Installs all requirements and sets up venvs
+./run_demo.sh   # Launches both RAG (:8080) and SchoolHack (:8000)
+```
+
+---
+
+## 🔑 Demo Accounts
+
+Use the pre-seeded accounts to explore both viewpoints:
+
+| Role | Username | Password | Key Highlights |
+|---|---|---|---|
+| **Student** | `admin` | `admin` | **Mathematik-Agent**, Chemistry Quizzes, Personal Mastery Radar |
+| **Teacher** | `admin` | `admin` | **Classroom Analytics**, 1-Click Gap Finder, Support Groups |
+
+---
+
+## 📂 Project Structure
+
+```
+SchoolHack/
+├── backend-python/                 # Core application backend
+│   ├── app/
+│   │   ├── main.py                 # FastAPI application, routing & session handlers
+│   │   ├── math_agent.py           # Deterministic symbolic math solver & board commands
+│   │   ├── math_tutor.py           # Socratic dialogue tutor and turn manager
+│   │   ├── pdf_text.py             # PDF parsing, OCR normalization & task extraction
+│   │   ├── tts.py                  # Text-to-Speech audio synthesizer
+│   │   ├── i18n.py                 # Language localization handler (German/English)
+│   │   ├── templates/              # Jinja2 HTML templates
+│   │   │   ├── mathematik.html     # Infinite whiteboard frontend UI
+│   │   │   ├── base.html           # Core layout & navigation
+│   │   │   └── ...                 # Student, teacher, and quiz views
+│   │   └── static/                 # CSS, KaTeX bundle, i18n dictionaries, JS
+│   ├── requirements.txt            # Python dependencies
+│   └── run.sh                      # One-click startup script
+│
+├── vectorstore/                    # Multimodal RAG v2
+│   ├── rag_v2/                     # Hybrid search (EmbeddingGemma 2 + BM25 + BGE Reranker)
+│   ├── processed_data_v2/          # Pre-indexed Chroma vector database & textbook images
+│   └── requirements.txt            # Vector store dependencies
+│
+├── screenshots/                    # High-res UI & whiteboard screenshots
+│   ├── math-agent-whiteboard.png   # Full view of the active mathematics whiteboard
+│   └── studdyai-canvas.png         # Multi-space canvas layout
+│
+├── docs/                           # Architectural & deployment documentation
+│   ├── videos/                     # Demo video directory
+│   ├── technical-flow.md           # Runtime technical architecture & sequence flows
+│   ├── business-flow.md            # Educational value proposition & student journey
+│   └── DEPLOY_RENDER.md            # Production deployment instructions
+│
+├── studdyai-re/                    # Reverse-engineering research & analysis
+│   ├── matematik-ajan-uretim-raporu.md # Technical reconstruction report
+│   ├── live-protocol.md            # Live WebSocket protocol specification
+│   └── api-inventory.md            # Verified endpoint inventory
+│
+├── run_demo.sh                     # Launch both App and RAG servers
+└── setup.sh                        # Automated environment setup script
+```
+
+---
+
+## 📖 Deep Dives & Documentation
+
+* [Technical Flow & Architecture](docs/technical-flow.md) — Comprehensive sequence diagrams and data flow.
+* [Business Flow & Pedagogical Design](docs/business-flow.md) — How SchoolHack creates measurable learning outcomes.
+* [Mathematik-Agent Reconstruction Report](studdyai-re/matematik-ajan-uretim-raporu.md) — Production analysis of live whiteboard tutoring.
+* [Deploy on Render Guide](docs/DEPLOY_RENDER.md) — Cloud setup and production configuration.
+
+---
+
+## 📄 License
+
+This project is open source and available under the [MIT License](LICENSE).
